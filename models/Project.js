@@ -11,16 +11,20 @@ const projectSchema = new Schema({
     required: true,
   },
   frontEnd: {
-    type: String,
+    type: [String],
   },
   backEnd: {
-    type: String,
+    type: [String],
   },
   status: {
     type: Boolean,
     default: true,
   },
   timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  updated_at: {
     type: Date,
     default: Date.now,
   },

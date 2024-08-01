@@ -8,9 +8,11 @@ const port = 6000;
 
 app.use(express.json());
 //  routes
+
+// route for projects
 app.use("/api/projects", require("./routes/projects"));
 
-app.use("/api/auth", require("./routes/users"));
+// route for authentication
 app.use("/api/auth", require("./routes/users"));
 
 app.listen(port, () => {
