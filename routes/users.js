@@ -5,6 +5,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = "iLoveHer";
+const userMiddleware = require("../middleware/userMiddleware");
 
 // Validation middleware for user registration
 const validateUser = [
@@ -128,19 +129,23 @@ router.post("/login", validationLogin, async (req, res) => {
     }
 
     // Send response
-    res.status(200).json({
-      authenticationToken: authenticationToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      },
-    });
+    res.status(200).json({ authenticationToken });
   } catch (error) {
     // Handle any errors that occur
     res
       .status(500)
       .json({ message: "Error logging in user", error: error.message });
+  }
+});
+
+// get logged in user details
+router.post("/getUser", userMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    res.send(user);
+  } catch (error) {
+    res.status(500).send("Internal server error");
+    console.log(error.message);
   }
 });
 
