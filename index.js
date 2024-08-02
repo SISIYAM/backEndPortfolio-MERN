@@ -1,10 +1,18 @@
 // index.js
 const connectToMongo = require("./db");
 const express = require("express");
+const cors = require("cors");
 
 connectToMongo();
 const app = express();
-const port = 6000;
+const port = 5173;
+
+const corsOptions = {
+  AccessControlAllowOrigin: "*",
+  origin: "http://localhost:3000",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 //  routes

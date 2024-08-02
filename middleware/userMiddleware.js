@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const constant = require("../myConstants");
+const { constant } = require("../myConstants");
 
 const userMiddleware = (req, res, next) => {
   // get user from the jwt token

@@ -5,7 +5,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const userMiddleware = require("../middleware/userMiddleware");
-const constant = require("../myConstants");
+const { constant, expiryTime, generateToken } = require("../myConstants");
 
 // Validation middleware for user registration
 const validateUser = [
@@ -48,20 +48,17 @@ router.post("/add", validateUser, async (req, res) => {
       password: secPassword,
     });
 
-    const data = {
+    const payload = {
       user: {
         id: user.id,
       },
     };
 
-    let authenticationToken;
-    try {
-      authenticationToken = jwt.sign(data, constant.JWT_SECRET);
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error generating token", error: error.message });
-    }
+    let authenticationToken = generateToken(
+      payload,
+      expiryTime,
+      constant.JWT_SECRET
+    );
 
     // Send response
     res.status(201).json({
@@ -109,22 +106,17 @@ router.post("/login", validationLogin, async (req, res) => {
         .json({ message: "Please try to login with correct credentials" });
     }
 
-    const data = {
+    const payload = {
       user: {
         id: user.id,
       },
     };
 
-    let authenticationToken;
-    try {
-      authenticationToken = jwt.sign(data, constant.JWT_SECRET, {
-        expiresIn: "10s",
-      });
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error generating token", error: error.message });
-    }
+    let authenticationToken = generateToken(
+      payload,
+      expiryTime,
+      constant.JWT_SECRET
+    );
 
     // Send response
     res.status(200).json({ success: true, authenticationToken });
@@ -143,6 +135,17 @@ router.post("/getUser", userMiddleware, async (req, res) => {
   } catch (error) {
     res.status(500).send("Internal server error");
     console.log(error.message);
+  }
+});
+
+// end point for fetch all user
+router.get("/all", userMiddleware, async (req, res) => {
+  try {
+    const user = await User.find({ status: false });
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching users:", error.message);
+    res.status(500).json({ message: "Error fetching users" });
   }
 });
 

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const constant = require("./myConstants");
+const { constant } = require("./myConstants");
 
 const connectToMongo = async () => {
   try {
