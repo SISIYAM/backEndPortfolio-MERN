@@ -4,8 +4,8 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "iLoveHer";
 const userMiddleware = require("../middleware/userMiddleware");
+const constant = require("../myConstants");
 
 // Validation middleware for user registration
 const validateUser = [
@@ -56,7 +56,7 @@ router.post("/add", validateUser, async (req, res) => {
 
     let authenticationToken;
     try {
-      authenticationToken = jwt.sign(data, JWT_SECRET);
+      authenticationToken = jwt.sign(data, constant.JWT_SECRET);
     } catch (error) {
       return res
         .status(500)
@@ -65,12 +65,8 @@ router.post("/add", validateUser, async (req, res) => {
 
     // Send response
     res.status(201).json({
+      success: true,
       authenticationToken: authenticationToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      },
     });
   } catch (error) {
     // Handle any errors that occur
@@ -93,7 +89,7 @@ const validationLogin = [
 router.post("/login", validationLogin, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(403).json({ errors: errors.array() });
   }
 
   const { email, password } = req.body;
@@ -101,7 +97,7 @@ router.post("/login", validationLogin, async (req, res) => {
     let user = await User.findOne({ email });
     if (!user) {
       return res
-        .status(400)
+        .status(403)
         .json({ message: "Please try to login with correct credentials" });
     }
 
@@ -109,7 +105,7 @@ router.post("/login", validationLogin, async (req, res) => {
 
     if (!passwordVerify) {
       return res
-        .status(400)
+        .status(403)
         .json({ message: "Please try to login with correct credentials" });
     }
 
@@ -121,7 +117,9 @@ router.post("/login", validationLogin, async (req, res) => {
 
     let authenticationToken;
     try {
-      authenticationToken = jwt.sign(data, JWT_SECRET);
+      authenticationToken = jwt.sign(data, constant.JWT_SECRET, {
+        expiresIn: "10s",
+      });
     } catch (error) {
       return res
         .status(500)
@@ -129,9 +127,8 @@ router.post("/login", validationLogin, async (req, res) => {
     }
 
     // Send response
-    res.status(200).json({ authenticationToken });
+    res.status(200).json({ success: true, authenticationToken });
   } catch (error) {
-    // Handle any errors that occur
     res
       .status(500)
       .json({ message: "Error logging in user", error: error.message });

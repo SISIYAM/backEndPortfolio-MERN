@@ -1,23 +1,19 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "iLoveHer";
+const constant = require("../myConstants");
 
 const userMiddleware = (req, res, next) => {
   // get user from the jwt token
   const token = req.header("auth-token");
   if (!token) {
-    res
-      .status(401)
-      .send({ message: "Please authenticate using a valid token" });
+    res.status(401).send({ message: "Unauthorized user" });
   }
 
   try {
-    const data = jwt.verify(token, JWT_SECRET);
+    const data = jwt.verify(token, constant.JWT_SECRET);
     req.user = data.user;
     next();
   } catch (error) {
-    res
-      .status(401)
-      .send({ message: "Please authenticate using a valid token" });
+    res.status(401).send({ message: "Unauthorized user" });
   }
 };
 
