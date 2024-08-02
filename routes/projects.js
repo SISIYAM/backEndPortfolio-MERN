@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const express = require("express");
 const { body, validationResult } = require("express-validator"); // Import `body` from `express-validator`
 const router = express.Router();
@@ -51,37 +52,73 @@ router.put("/update/:id", userMiddleware, async (req, res) => {
   const { title, description, frontEnd, backEnd, status, updated_at } =
     req.body;
 
-  // new data for update if !null
-  const newData = {};
-  if (title) {
-    newData.title = title;
-  }
-  if (description) {
-    newData.description = description;
-  }
-  if (frontEnd) {
-    newData.frontEnd = frontEnd;
-  }
-  if (backEnd) {
-    newData.backEnd = backEnd;
-  }
-  if (status) {
-    newData.status = status;
-  }
-  newData.updated_at = Date.now();
+  try {
+    // new data for update if !null
+    const newData = {};
+    if (title) {
+      newData.title = title;
+    }
+    if (description) {
+      newData.description = description;
+    }
+    if (frontEnd) {
+      newData.frontEnd = frontEnd;
+    }
+    if (backEnd) {
+      newData.backEnd = backEnd;
+    }
+    if (status) {
+      newData.status = status;
+    }
+    newData.updated_at = Date.now();
 
-  // search project
-  let project = await Project.findById(req.params.id);
-  if (!project) {
-    return res.status(404).json({ message: "Note found" });
-  }
+    //first check is id valid or not
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: "Project not found" });
+    }
 
-  project = await Project.findByIdAndUpdate(
-    req.params.id,
-    { $set: newData },
-    { new: true }
-  );
-  return res.status(200).json(project);
+    // search project
+    let project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: "Note found" });
+    }
+
+    project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { $set: newData },
+      { new: true }
+    );
+    return res.status(200).json(project);
+  } catch (error) {
+    // handle any errors that occur
+    res
+      .status(400)
+      .json({ message: "Error creating project", error: error.message });
+  }
+});
+
+// end point for delete projects when admin was logged in
+router.delete("/delete/:id", userMiddleware, async (req, res) => {
+  try {
+    // check is id valid or not
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    // get project title before delete
+    const title = project.title;
+    await Project.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: `${title} deleted successfully` });
+  } catch (error) {
+    // Handle any errors that occur
+    res
+      .status(500)
+      .json({ message: "Error deleting project", error: error.message });
+  }
 });
 
 module.exports = router;
