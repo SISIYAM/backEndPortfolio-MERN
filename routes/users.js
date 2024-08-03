@@ -131,9 +131,9 @@ router.post("/login", validationLogin, async (req, res) => {
 router.post("/getUser", userMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    res.send(user);
+    res.status(200).json({ success: true, user });
   } catch (error) {
-    res.status(500).send("Internal server error");
+    res.status(500).json({ message: "Internal server error" });
     console.log(error.message);
   }
 });
@@ -141,7 +141,7 @@ router.post("/getUser", userMiddleware, async (req, res) => {
 // end point for fetch all user
 router.get("/all", userMiddleware, async (req, res) => {
   try {
-    const user = await User.find({ status: false });
+    const user = await User.find({ status: true });
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching users:", error.message);
