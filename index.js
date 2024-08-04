@@ -2,10 +2,10 @@
 const connectToMongo = require("./db");
 const express = require("express");
 const cors = require("cors");
-
+const { constant } = require("./myConstants");
 connectToMongo();
 const app = express();
-const port = 3000;
+const port = constant.port;
 
 const corsOptions = {
   AccessControlAllowOrigin: "*",

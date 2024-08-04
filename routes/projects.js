@@ -4,6 +4,7 @@ const { body, validationResult } = require("express-validator"); // Import `body
 const router = express.Router();
 const Project = require("../models/Project");
 const userMiddleware = require("../middleware/userMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 // validation middleware
 const validateProject = [
@@ -13,41 +14,59 @@ const validateProject = [
   body("description")
     .isLength({ min: 3 })
     .withMessage("Description must be at least 3 characters long"),
-  body("frontEnd")
-    .isArray()
-    .withMessage("FrontEnd must be an array")
-    .custom((value) => value.length > 0)
-    .withMessage("FrontEnd array must contain at least one element"),
+  // body("frontEnd")
+  //   // .isArray()
+  //   // .withMessage("FrontEnd must be an array")
+  //   .custom((value) => value.length > 0)
+  //   .withMessage("FrontEnd array must contain at least one element"),
 
-  body("backEnd")
-    .isArray()
-    .withMessage("BackEnd must be an array")
-    .custom((value) => value.length > 0)
-    .withMessage("BackEnd array must contain at least one element"),
+  // body("backEnd")
+  //   // .isArray()
+  //   // .withMessage("BackEnd must be an array")
+  //   .custom((value) => value.length > 0)
+  //   .withMessage("BackEnd array must contain at least one element"),
 ];
 
 //end point for add projects when admin logged in
-router.post("/add", userMiddleware, validateProject, async (req, res) => {
-  try {
-    // check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.post(
+  "/add",
+  userMiddleware,
+  upload.array("images", 10),
+  validateProject,
+  async (req, res) => {
+    try {
+      // check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // image paths
+      const imagePaths = req.files.map((file) => file.path);
+
+      // create a new project using the data from the request body
+      const newProject = new Project({
+        title: req.body.title,
+        description: req.body.description,
+        frontEnd: req.body.frontEnd,
+        backEnd: req.body.backEnd,
+        images: imagePaths,
+      });
+      // save the project to MongoDB
+      await newProject.save();
+      res.status(201).json({
+        success: true,
+        message: "Project created successfully",
+        project: newProject,
+      });
+    } catch (error) {
+      // handle any errors that occur
+      res
+        .status(400)
+        .json({ message: "Error creating project", error: error.message });
     }
-    // create a new project using the data from the request body
-    const newProject = new Project(req.body);
-    // save the project to MongoDB
-    await newProject.save();
-    res
-      .status(201)
-      .json({ message: "Project created successfully", project: newProject });
-  } catch (error) {
-    // handle any errors that occur
-    res
-      .status(400)
-      .json({ message: "Error creating project", error: error.message });
   }
-});
+);
 
 // end point for fetch all projects when admin logged in and where status is true
 router.get("/fetch", userMiddleware, async (req, res) => {

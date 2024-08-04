@@ -16,6 +16,10 @@ const projectSchema = new Schema({
   backEnd: {
     type: [String],
   },
+  images: {
+    type: [String],
+    default: [],
+  },
   status: {
     type: Boolean,
     default: true,

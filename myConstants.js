@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const constant = {
   mongoUrl: "mongodb://localhost:27017/Portfolio",
   JWT_SECRET: "iLoveHer",
+  port: 3000,
 };
 
 // expiry time for authentication token, must use s or h after the number otherwise it will consider it as a ms
