@@ -13,8 +13,17 @@ const validateProject = [
   body("description")
     .isLength({ min: 3 })
     .withMessage("Description must be at least 3 characters long"),
-  body("frontEnd").isArray().withMessage("FrontEnd must be an array"),
-  body("backEnd").isArray().withMessage("BackEnd must be an array"),
+  body("frontEnd")
+    .isArray()
+    .withMessage("FrontEnd must be an array")
+    .custom((value) => value.length > 0)
+    .withMessage("FrontEnd array must contain at least one element"),
+
+  body("backEnd")
+    .isArray()
+    .withMessage("BackEnd must be an array")
+    .custom((value) => value.length > 0)
+    .withMessage("BackEnd array must contain at least one element"),
 ];
 
 //end point for add projects when admin logged in
