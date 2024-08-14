@@ -4,7 +4,7 @@ const { constant } = require("../myConstants");
 const userMiddleware = (req, res, next) => {
   // get user from the jwt token
   const token = req.header("auth-token");
-  console.log(token);
+
   if (!token) {
     res.status(401).json({ success: false, message: "Unauthorized user" });
   }

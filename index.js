@@ -3,6 +3,7 @@ const connectToMongo = require("./db");
 const express = require("express");
 const cors = require("cors");
 const { constant } = require("./myConstants");
+const path = require("path");
 connectToMongo();
 const app = express();
 const port = constant.port;
@@ -16,6 +17,9 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 //  routes
+
+// Serve static files from the 'storage' directory
+app.use("/storage", express.static(path.join(__dirname, "storage")));
 
 // route for projects
 app.use("/api/projects", require("./routes/projects"));

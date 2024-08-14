@@ -5,6 +5,7 @@ const router = express.Router();
 const Project = require("../models/Project");
 const userMiddleware = require("../middleware/userMiddleware");
 const upload = require("../middleware/uploadMiddleware");
+const Image = require("../models/Images");
 
 // validation middleware
 const validateProject = [
@@ -41,19 +42,24 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      // image paths
-      const imagePaths = req.files.map((file) => file.path);
-
       // create a new project using the data from the request body
       const newProject = new Project({
         title: req.body.title,
         description: req.body.description,
         frontEnd: req.body.frontEnd,
         backEnd: req.body.backEnd,
-        images: imagePaths,
       });
       // save the project to MongoDB
       await newProject.save();
+
+      // save images
+      req.files.map(async (file) => {
+        await Image.create({
+          projectID: newProject.id,
+          path: file.path,
+        });
+      });
+      console.log(req.body);
       res.status(201).json({
         success: true,
         message: "Project created successfully",
@@ -70,60 +76,98 @@ router.post(
 
 // end point for fetch all projects when admin logged in and where status is true
 router.get("/fetch", userMiddleware, async (req, res) => {
-  const allProjects = await Project.find({ status: true });
-  res.json(allProjects);
-  console.log(allProjects);
+  try {
+    const allProjects = await Project.find({});
+    res.json({ success: true, allProjects });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// end point for fetch all projects when admin logged in and where status is true
+router.get("/fetch/images/:projectId", userMiddleware, async (req, res) => {
+  try {
+    const images = await Image.find({
+      status: true,
+      projectID: req.params.projectId,
+    });
+    res.json({ success: true, images });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
 });
 
 // end point for update projects
-router.put("/update/:id", userMiddleware, async (req, res) => {
-  const { title, description, frontEnd, backEnd, status, updated_at } =
-    req.body;
+router.put(
+  "/update/:id",
+  userMiddleware,
+  upload.array("images", 10),
+  validateProject,
+  async (req, res) => {
+    const { title, description, frontEnd, backEnd, status } = req.body;
 
-  try {
-    // new data for update if !null
-    const newData = {};
-    if (title) {
-      newData.title = title;
-    }
-    if (description) {
-      newData.description = description;
-    }
-    if (frontEnd) {
-      newData.frontEnd = frontEnd;
-    }
-    if (backEnd) {
-      newData.backEnd = backEnd;
-    }
-    if (status) {
+    try {
+      // check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // new data for update if !null
+      const newData = {};
+      if (title) {
+        newData.title = title;
+      }
+      if (description) {
+        newData.description = description;
+      }
+      if (frontEnd) {
+        newData.frontEnd = frontEnd;
+      }
+      if (backEnd) {
+        newData.backEnd = backEnd;
+      }
+
       newData.status = status;
-    }
-    newData.updated_at = Date.now();
 
-    //first check is id valid or not
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ message: "Project not found" });
-    }
+      newData.updated_at = Date.now();
 
-    // search project
-    let project = await Project.findById(req.params.id);
-    if (!project) {
-      return res.status(404).json({ message: "Note found" });
-    }
+      //first check is id valid or not
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(404).json({ message: "Project not found" });
+      }
 
-    project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { $set: newData },
-      { new: true }
-    );
-    return res.status(200).json(project);
-  } catch (error) {
-    // handle any errors that occur
-    res
-      .status(400)
-      .json({ message: "Error creating project", error: error.message });
+      // search project
+      let project = await Project.findById(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Note found" });
+      }
+
+      project = await Project.findByIdAndUpdate(
+        req.params.id,
+        { $set: newData },
+        { new: true }
+      );
+
+      // save images
+      req.files.map(async (file) => {
+        await Image.create({
+          projectID: req.params.id,
+          path: file.path,
+        });
+      });
+
+      return res
+        .status(200)
+        .json({ success: "true", message: "Updated successfully", project });
+    } catch (error) {
+      // handle any errors that occur
+      res
+        .status(400)
+        .json({ message: "Error creating project", error: error.message });
+    }
   }
-});
+);
 
 // end point for delete projects when admin was logged in
 router.delete("/delete/:id", userMiddleware, async (req, res) => {

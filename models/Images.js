@@ -1,22 +1,15 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const projectSchema = new Schema({
-  title: {
+const imageSchema = new Schema({
+  projectID: {
     type: String,
     required: true,
   },
-  description: {
+  path: {
     type: String,
     required: true,
   },
-  frontEnd: {
-    type: [String],
-  },
-  backEnd: {
-    type: [String],
-  },
-
   status: {
     type: Boolean,
     default: true,
@@ -31,6 +24,6 @@ const projectSchema = new Schema({
   },
 });
 
-const Project = mongoose.model("Project", projectSchema);
+const Image = mongoose.model("images", imageSchema);
 
-module.exports = Project;
+module.exports = Image;
