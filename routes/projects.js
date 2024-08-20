@@ -46,20 +46,35 @@ router.post(
       const newProject = new Project({
         title: req.body.title,
         description: req.body.description,
-        frontEnd: req.body.frontEnd,
-        backEnd: req.body.backEnd,
+        frontEnd: JSON.parse(req.body.frontEnd),
+        backEnd: JSON.parse(req.body.backEnd),
       });
       // save the project to MongoDB
       await newProject.save();
 
-      // save images
-      req.files.map(async (file) => {
-        await Image.create({
-          projectID: newProject.id,
-          path: file.path,
+      // save images if there are any
+      if (req.files) {
+        const imagePromises = req.files.map(async (file) => {
+          const image = new Image({
+            projectID: newProject._id,
+            path: file.path,
+          });
+
+          await image.save();
+
+          return image._id; // return the image ID to push to the project
         });
-      });
-      console.log(req.body);
+
+        // wait for all images to be saved and get their IDs
+        const imageIds = await Promise.all(imagePromises);
+
+        // update the project with the image IDs
+        await Project.updateOne(
+          { _id: newProject._id },
+          { $push: { images: { $each: imageIds } } }
+        );
+      }
+
       res.status(201).json({
         success: true,
         message: "Project created successfully",
@@ -84,8 +99,39 @@ router.get("/fetch", userMiddleware, async (req, res) => {
   }
 });
 
-// end point for fetch all projects when admin logged in and where status is true
+// end point for fetch all projects from frontend with it's images
+router.get("/all", async (req, res) => {
+  try {
+    const allProjects = await Project.find({ status: true }).populate("images");
+
+    // for each project find the related images
+    // const projectsWithImages = await Promise.all(
+    //   allProjects.map(async (project) => {
+    //     const images = await Image.find({ projectID: project._id });
+    //     return { ...project._doc, images };
+    //   })
+    // );
+
+    res.json({ success: true, projects: allProjects });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// end point for fetch all projects images when admin logged in and where status is true
 router.get("/fetch/images/:projectId", userMiddleware, async (req, res) => {
+  try {
+    const images = await Image.find({
+      projectID: req.params.projectId,
+    });
+    res.json({ success: true, images });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// end point for fetch all projects images from frontend
+router.get("/:projectId/images", async (req, res) => {
   try {
     const images = await Image.find({
       status: true,
@@ -94,6 +140,32 @@ router.get("/fetch/images/:projectId", userMiddleware, async (req, res) => {
     res.json({ success: true, images });
   } catch (error) {
     res.json({ success: false, message: error.message });
+  }
+});
+
+// end point for delete images of each projects
+router.delete("/delete/image/:id", userMiddleware, async (req, res) => {
+  try {
+    // check is id valid or not
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Image not found" });
+    }
+    const image = await Image.findById(req.params.id);
+    if (!image) {
+      return res
+        .status(404)
+        .json({ success: false, message: "image not found" });
+    }
+
+    await Image.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: `Deleted successfully` });
+  } catch (error) {
+    // Handle any errors that occur
+    res
+      .status(500)
+      .json({ message: "Error deleting image", error: error.message });
   }
 });
 
@@ -122,10 +194,10 @@ router.put(
         newData.description = description;
       }
       if (frontEnd) {
-        newData.frontEnd = frontEnd;
+        newData.frontEnd = JSON.parse(frontEnd);
       }
       if (backEnd) {
-        newData.backEnd = backEnd;
+        newData.backEnd = JSON.parse(backEnd);
       }
 
       newData.status = status;
@@ -174,17 +246,23 @@ router.delete("/delete/:id", userMiddleware, async (req, res) => {
   try {
     // check is id valid or not
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ message: "Project not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
     }
     const project = await Project.findById(req.params.id);
     if (!project) {
-      return res.status(404).json({ message: "Project not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
     }
 
     // get project title before delete
     const title = project.title;
     await Project.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: `${title} deleted successfully` });
+    res
+      .status(200)
+      .json({ success: true, message: `${title} deleted successfully` });
   } catch (error) {
     // Handle any errors that occur
     res

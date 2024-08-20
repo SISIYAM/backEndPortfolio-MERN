@@ -16,7 +16,6 @@ const projectSchema = new Schema({
   backEnd: {
     type: [String],
   },
-
   status: {
     type: Boolean,
     default: true,
@@ -29,6 +28,12 @@ const projectSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  images: [
+    {
+      type: mongoose.Types.ObjectId,
+      ref: "Image",
+    },
+  ],
 });
 
 const Project = mongoose.model("Project", projectSchema);

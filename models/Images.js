@@ -3,8 +3,8 @@ const { Schema } = mongoose;
 
 const imageSchema = new Schema({
   projectID: {
-    type: String,
-    required: true,
+    type: mongoose.Types.ObjectId,
+    ref: "Project",
   },
   path: {
     type: String,
@@ -24,6 +24,6 @@ const imageSchema = new Schema({
   },
 });
 
-const Image = mongoose.model("images", imageSchema);
+const Image = mongoose.model("Image", imageSchema);
 
 module.exports = Image;

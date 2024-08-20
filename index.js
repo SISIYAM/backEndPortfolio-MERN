@@ -9,8 +9,7 @@ const app = express();
 const port = constant.port;
 
 const corsOptions = {
-  AccessControlAllowOrigin: "*",
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:3001"], // Allowed origins
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
 };
 app.use(cors(corsOptions));
