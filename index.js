@@ -18,6 +18,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 //  routes
 
+app.get("/", (req, res) => {
+  res.json({ status: 200, message: "Success" });
+});
+
 // Serve static files from the 'storage' directory
 app.use("/storage", express.static(path.join(__dirname, "storage")));
 
