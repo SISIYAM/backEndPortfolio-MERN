@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
-
+require("dotenv").config();
 // basic constant
 const constant = {
-  mongoUrl: "mongodb://localhost:27017/Portfolio",
-  JWT_SECRET: "iLoveHer",
-  port: 3000,
+  mongoUrl: process.env.MONGO_URI,
+  JWT_SECRET: process.env.JWT_SECRET,
+  port: process.env.PORT,
 };
 
 // expiry time for authentication token, must use s or h after the number otherwise it will consider it as a ms

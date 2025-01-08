@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const { constant } = require("./myConstants");
 const path = require("path");
+require("dotenv").config();
 connectToMongo();
 const app = express();
 const port = constant.port;
